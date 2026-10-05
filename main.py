@@ -1,4 +1,4 @@
-"""Implementation and verification script for Tasks 1 to 6 of the assignment PDF:
+"""Implementation and verification script for Tasks 1 to 7 of the assignment PDF:
 'Building a Simple N-gram Language Model from Scratch in Python'.
 
 Covers:
@@ -8,10 +8,11 @@ Covers:
   Task 4: Split the Corpus
   Task 5: Generate N-grams
   Task 6: Count N-grams
+  Task 7: Calculate MLE Probability
 
 Usage:
-    python test_all.py
-    python test_all.py --quick
+    python main.py
+    python main.py --quick
 """
 
 import sys
@@ -36,6 +37,7 @@ from src.preprocess import (
 )
 from src.ngram import (
     add_sentence_boundaries,
+    calculate_mle_probability,
     count_ngrams,
     generate_ngrams,
 )
@@ -215,6 +217,7 @@ def task_6_count_ngrams(all_bigrams):
     print("Example: bigram_counts = Counter(bigrams)\n")
 
     bigram_counts = count_ngrams(all_bigrams)
+    context_counts = Counter(b[0] for b in all_bigrams)
 
     print("Expected output")
     print("Top 10 bigrams:")
@@ -222,11 +225,48 @@ def task_6_count_ngrams(all_bigrams):
     for bigram, count in top_10:
         print(f"{str(bigram):<25} {count:,}")
 
-    return bigram_counts
+    return bigram_counts, context_counts
+
+
+def task_7_calculate_mle_probability(bigram_counts, context_counts):
+    print_task_header(7, "Calculate MLE Probability")
+    print("Implement the Maximum Likelihood Estimation formula.")
+    print("For a bigram:")
+    print("  P(w_i | w_{i-1}) = Count(w_{i-1}, w_i) / Count(w_{i-1})\n")
+    print("This is the fundamental probability estimation method presented in the chapter.\n")
+    print("For example:")
+    print("  Count(the, cat) = 25")
+    print("  Count(the)      = 500")
+    print("  Therefore:")
+    print("  P(cat | the) = 25/500 = 0.05\n")
+
+    # Example bigrams as requested: "Students should calculate probabilities for at least five example bigrams."
+    examples = [
+        ("of", "the"),
+        ("to", "be"),
+        ("in", "the"),
+        ("mr", "darcy"),
+        (BOS, "i"),
+        ("unusual", "machine"),  # Demonstrating unseen combination (zero probability)
+    ]
+
+    print("Expected output\n")
+    header = f"{'Bigram':<25} {'Count':<8} {'Context Count':<15} {'Probability':<12}"
+    print(header)
+    print("-" * len(header))
+    for w1, w2 in examples:
+        ngram = (w1, w2)
+        c = bigram_counts.get(ngram, 0)
+        c_ctx = context_counts.get(w1, 0)
+        prob = calculate_mle_probability(ngram, bigram_counts, context_counts)
+        bigram_str = f"{w1} -> {w2}"
+        print(f"{bigram_str:<25} {c:<8,} {c_ctx:<15,} {prob:.4f}")
+
+    return examples
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Tasks 1 to 6 of N-gram Language Model Assignment")
+    parser = argparse.ArgumentParser(description="Tasks 1 to 7 of N-gram Language Model Assignment")
     parser.add_argument(
         "--corpus",
         default="pride",
@@ -242,7 +282,7 @@ def main():
 
     print("\n" + "#" * 70)
     print("  BUILDING A SIMPLE N-GRAM LANGUAGE MODEL FROM SCRATCH IN PYTHON")
-    print("  Pipeline Implementation: Tasks 1 to 6")
+    print("  Pipeline Implementation: Tasks 1 to 7")
     print("#" * 70)
 
     # Task 1: Load and Inspect the Corpus
@@ -261,10 +301,13 @@ def main():
     all_unigrams, all_bigrams, all_trigrams = task_5_generate_ngrams(train_sents)
 
     # Task 6: Count N-grams
-    bigram_counts = task_6_count_ngrams(all_bigrams)
+    bigram_counts, context_counts = task_6_count_ngrams(all_bigrams)
+
+    # Task 7: Calculate MLE Probability
+    task_7_calculate_mle_probability(bigram_counts, context_counts)
 
     print("\n" + "=" * 70)
-    print(">> TASKS 1 TO 6 SUCCESSFULLY COMPLETED")
+    print(">> TASKS 1 TO 7 SUCCESSFULLY COMPLETED")
     print("=" * 70 + "\n")
 
 

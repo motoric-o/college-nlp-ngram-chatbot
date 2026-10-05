@@ -8,6 +8,7 @@ from .ngram import (
     NGramCounter,
     add_boundaries,
     add_sentence_boundaries,
+    calculate_mle_probability,
     count_ngrams,
     events,
     generate_ngrams,
@@ -49,5 +50,6 @@ __all__ = [
     "add_sentence_boundaries",
     "events",
     "count_ngrams",
+    "calculate_mle_probability",
     "NGramCounter",
 ]

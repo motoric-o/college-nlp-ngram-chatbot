@@ -87,3 +87,33 @@ class NGramCounter:
 
     def get_followers(self, context):
         return self.followers[tuple(context)]
+
+
+# Task 7 required function
+def calculate_mle_probability(ngram, ngram_counts, context_counts):
+    """Task 7 / Section 22: Calculate MLE probability for an n-gram.
+
+    Formula:
+        P(w_i | w_{i-1}) = Count(w_{i-1}, w_i) / Count(w_{i-1})
+        For general n-gram:
+        P(w_i | w_{i-n+1}^{i-1}) = Count(ngram) / Count(context)
+
+    Args:
+        ngram (tuple): The n-gram tuple, e.g. ('of', 'the').
+        ngram_counts (Mapping): Frequency counts of n-grams.
+        context_counts (Mapping): Frequency counts of contexts ((n-1)-grams).
+
+    Returns:
+        float: Maximum Likelihood Estimation probability (0.0 if context count is 0).
+    """
+    ngram = tuple(ngram)
+    context = ngram[:-1]
+    c_ngram = ngram_counts.get(ngram, 0)
+
+    # Support context stored as single token or as tuple
+    c_ctx = context_counts.get(context, 0)
+    if c_ctx == 0 and len(context) == 1:
+        c_ctx = context_counts.get(context[0], 0)
+
+    return c_ngram / c_ctx if c_ctx > 0 else 0.0
+

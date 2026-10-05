@@ -210,18 +210,18 @@ def task_5_generate_ngrams(train_sentences):
 
 
 def task_6_count_ngrams(all_bigrams):
-    print_task_header(6, "Count N-grams")
     print("Use Python's Counter or a dictionary.")
-    print("Example: bigram_counts = Counter(bigrams)\n")
 
     bigram_counts = count_ngrams(all_bigrams)
 
     print("Expected output")
-    print("Top 10 bigrams:")
+    print("Top 10:")
     top_10 = bigram_counts.most_common(10)
     for bigram, count in top_10:
         print(f"{str(bigram):<25} {count:,}")
 
+    print()
+    
     return bigram_counts
 
 
@@ -261,7 +261,13 @@ def main():
     all_unigrams, all_bigrams, all_trigrams = task_5_generate_ngrams(train_sents)
 
     # Task 6: Count N-grams
+    print_task_header(6, "Count N-grams")
+    print("Unigram Count")
+    unigram_counts = task_6_count_ngrams(all_unigrams)
+    print("Bigram Count")
     bigram_counts = task_6_count_ngrams(all_bigrams)
+    print("Trigram Count")
+    trigram_counts = task_6_count_ngrams(all_trigrams)
 
     print("\n" + "=" * 70)
     print(">> TASKS 1 TO 6 SUCCESSFULLY COMPLETED")

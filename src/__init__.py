@@ -9,10 +9,16 @@ from .ngram import (
     add_boundaries,
     add_sentence_boundaries,
     calculate_mle_probability,
+    calculate_perplexity,
     count_ngrams,
     events,
     generate_ngrams,
+    generate_sentence,
+    laplace_probability,
     ngrams,
+    predict_next_word,
+    sentence_log_probability,
+    sentence_probability,
 )
 from .preprocess import (
     BOS,
@@ -51,5 +57,11 @@ __all__ = [
     "events",
     "count_ngrams",
     "calculate_mle_probability",
+    "predict_next_word",
+    "sentence_probability",
+    "sentence_log_probability",
+    "laplace_probability",
+    "calculate_perplexity",
+    "generate_sentence",
     "NGramCounter",
 ]

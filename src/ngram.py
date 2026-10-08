@@ -348,8 +348,45 @@ def calculate_perplexity(
     return math.exp(-total_log_prob / total_words)
 
 
+def sample_with_temperature(words, weights, temperature=1.0, rng=None):
+    """Sample a token from words with weights scaled by temperature.
+
+    Args:
+        words (Sequence): Candidate tokens.
+        weights (Sequence[float]): Raw counts or probabilities for candidates.
+        temperature (float): Temperature scaling parameter (> 0).
+            T <= 0.05: Greedy selection (argmax / mode).
+            T = 1.0: Standard probability distribution.
+            T > 1.0: Flatter / higher entropy distribution (more creative).
+        rng (Random, optional): Random instance or module.
+
+    Returns:
+        Token selected according to temperature-scaled probabilities.
+    """
+    if rng is None:
+        rng = random
+
+    if len(words) == 1:
+        return words[0]
+
+    if temperature <= 0.05:
+        best_idx = max(range(len(weights)), key=lambda i: weights[i])
+        return words[best_idx]
+
+    inv_t = 1.0 / max(temperature, 0.01)
+    scaled_weights = [math.pow(w, inv_t) for w in weights]
+    return rng.choices(words, weights=scaled_weights, k=1)[0]
+
+
 # Task 16 required function
-def generate_sentence(ngram_counts, context_counts=None, n=2, max_len=30, seed=None):
+def generate_sentence(
+    ngram_counts,
+    context_counts=None,
+    n=2,
+    max_len=30,
+    seed=None,
+    temperature=1.0,
+):
     """Task 16 / Section 22: Generate a sentence by sampling from n-gram distribution.
 
     Args:
@@ -358,6 +395,7 @@ def generate_sentence(ngram_counts, context_counts=None, n=2, max_len=30, seed=N
         n (int, optional): N-gram order (1: unigram, 2: bigram, 3: trigram). Default: 2.
         max_len (int, optional): Maximum length of sentence. Default: 30.
         seed (int, optional): Random seed. Default: None.
+        temperature (float, optional): Sampling temperature. Default: 1.0.
 
     Returns:
         str: Generated sentence text.
@@ -373,7 +411,10 @@ def generate_sentence(ngram_counts, context_counts=None, n=2, max_len=30, seed=N
         if not candidates:
             return ""
         words, weights = zip(*candidates)
-        generated = rng.choices(words, weights=weights, k=min(max_len, 15))
+        generated = [
+            sample_with_temperature(words, weights, temperature, rng)
+            for _ in range(min(max_len, 15))
+        ]
         return " ".join(generated)
 
     elif n == 2:
@@ -388,7 +429,7 @@ def generate_sentence(ngram_counts, context_counts=None, n=2, max_len=30, seed=N
             if not followers:
                 break
             words, weights = zip(*followers)
-            next_word = rng.choices(words, weights=weights, k=1)[0]
+            next_word = sample_with_temperature(words, weights, temperature, rng)
             if next_word == EOS:
                 break
             generated.append(next_word)
@@ -405,7 +446,7 @@ def generate_sentence(ngram_counts, context_counts=None, n=2, max_len=30, seed=N
         if not first_followers:
             return ""
         words, weights = zip(*first_followers)
-        w1 = rng.choices(words, weights=weights, k=1)[0]
+        w1 = sample_with_temperature(words, weights, temperature, rng)
         generated.append(w1)
         prev_context = (BOS, w1)
 
@@ -424,7 +465,7 @@ def generate_sentence(ngram_counts, context_counts=None, n=2, max_len=30, seed=N
             if not followers:
                 break
             words, weights = zip(*followers)
-            next_word = rng.choices(words, weights=weights, k=1)[0]
+            next_word = sample_with_temperature(words, weights, temperature, rng)
             if next_word == EOS:
                 break
             generated.append(next_word)

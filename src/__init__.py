@@ -2,6 +2,11 @@
 sentence boundaries, unknown word handling, n-gram generation, and n-gram counting.
 """
 
+from .chatbot import (
+    CHATBOT_REGISTRY,
+    BaseChatbot,
+    KeywordSeededChatbot,
+)
 from .data import load_corpus, set_seed
 from .eda import compute_corpus_stats, plot_eda
 from .ngram import (
@@ -17,6 +22,7 @@ from .ngram import (
     laplace_probability,
     ngrams,
     predict_next_word,
+    sample_with_temperature,
     sentence_log_probability,
     sentence_probability,
 )
@@ -63,5 +69,9 @@ __all__ = [
     "laplace_probability",
     "calculate_perplexity",
     "generate_sentence",
+    "sample_with_temperature",
+    "BaseChatbot",
+    "KeywordSeededChatbot",
+    "CHATBOT_REGISTRY",
     "NGramCounter",
 ]

@@ -311,7 +311,233 @@ class KeywordSeededChatbot(BaseChatbot):
         return generated
 
 
+class IntelligentChatbot(KeywordSeededChatbot):
+    """Chatbot implementing Phase 2: classical "intelligence" on top of N-grams.
+
+    Pillars:
+      1. Rule sets / intent classification (greeting, identity, farewell, opinion, thanks).
+      2. Conversational memory & pronoun coreference resolution.
+      3. Best-of-K candidate generation with multi-criteria re-ranking.
+      4. ELIZA-style pronoun reflection and persona framing.
+    """
+
+    INTENT_PATTERNS = [
+        ("GREETING", re.compile(r"^\s*(hello|hi|hey|greetings|good (morning|afternoon|evening|day)|how do you do)\b", re.I)),
+        ("FAREWELL", re.compile(r"\b(goodbye|good bye|farewell|good night|adieu|bye)\b", re.I)),
+        ("IDENTITY", re.compile(r"\b(who are you|what is your name|what's your name|are you a (bot|robot|machine))\b", re.I)),
+        ("THANKS", re.compile(r"\b(thank you|thanks|much obliged)\b", re.I)),
+        ("OPINION", re.compile(r"\b(?:what do you think (?:of|about)|do you like|how do you feel about|your opinion (?:of|on))\s+(.+)", re.I)),
+    ]
+
+    INTENT_RESPONSES = {
+        "GREETING": [
+            "Good day to you! I trust you find yourself in tolerable health.",
+            "How do you do? It is a pleasure to make your acquaintance.",
+            "Good day! Pray, what news do you bring from the neighbourhood?",
+        ],
+        "FAREWELL": [
+            "I take my leave of you with the utmost civility. Farewell!",
+            "Adieu! I hope we shall meet again before long.",
+        ],
+        "IDENTITY": [
+            "I am but a humble acquaintance from Hertfordshire, fashioned from the pages of Miss Austen's work.",
+            "I am a creature of words and probabilities, though I flatter myself my manners are tolerable.",
+        ],
+        "THANKS": [
+            "You are very welcome; it is no trouble at all.",
+            "Pray, do not mention it. I am happy to oblige.",
+        ],
+    }
+
+    OPINION_FRAMES = [
+        "Upon the subject of {topic}, I am inclined to think that",
+        "As for {topic}, I must confess that",
+        "Regarding {topic}, I daresay",
+    ]
+
+    PRONOUNS = {"he", "him", "his", "she", "her", "hers", "they", "them", "their", "it"}
+
+    REFLECTIONS = {
+        "i": "you", "me": "you", "my": "your", "mine": "yours", "am": "are",
+        "myself": "yourself", "you": "I", "your": "my", "yours": "mine",
+        "yourself": "myself", "are": "am",
+    }
+
+    DANGLING = {
+        "and", "or", "but", "to", "in", "of", "the", "a", "an", "with", "that",
+        "which", "for", "on", "at", "by", "from", "as", "my", "your", "his",
+        "her", "their", "mr", "mrs", "miss", "lady", "is", "was", "be", ",",
+    }
+
+    def __init__(self, *args, k_candidates: int = 5, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.k_candidates = k_candidates
+        self.history: List[Tuple[str, str]] = []
+        self.last_entity: Optional[str] = None
+        self.last_intent: Optional[str] = None
+        self._build_indexes()
+
+    # ------------------------------------------------------------------ indexes
+    def _build_indexes(self):
+        """Precompute follower tables so Best-of-K generation stays fast."""
+        self.bi_followers: Dict[str, List[Tuple[str, int]]] = {}
+        for (w1, w2), c in self.bigram_counts.items():
+            if w2 != BOS:
+                self.bi_followers.setdefault(w1, []).append((w2, c))
+        self.tri_followers: Dict[Tuple[str, str], List[Tuple[str, int]]] = {}
+        for (w1, w2, w3), c in self.trigram_counts.items():
+            if w3 != BOS:
+                self.tri_followers.setdefault((w1, w2), []).append((w3, c))
+        self.ctx_totals_bi = {w: sum(c for _, c in f) for w, f in self.bi_followers.items()}
+        self.ctx_totals_tri = {p: sum(c for _, c in f) for p, f in self.tri_followers.items()}
+        # Known entities = proper nouns present in the vocabulary
+        self.entities = {w for w in AUSTEN_PROPER_NOUNS if w in self.vocabulary
+                         and w not in ("mr", "mrs", "miss", "lady")}
+
+    def _generate_from_context(self, context: Tuple[str, ...], max_tokens: int = 30) -> List[str]:
+        generated: List[str] = []
+        ctx = context
+        hit_eos = False
+        for _ in range(max_tokens):
+            followers = None
+            if self.n == 3 and len(ctx) >= 2:
+                followers = self.tri_followers.get((ctx[-2], ctx[-1]))
+            if not followers:
+                followers = self.bi_followers.get(ctx[-1])
+            if not followers:
+                break
+            if len(generated) < 3:
+                non_eos = [f for f in followers if f[0] != EOS]
+                if non_eos:
+                    followers = non_eos
+            words, counts = zip(*followers)
+            tok = sample_with_temperature(words, counts, temperature=self.temperature, rng=self.rng)
+            if tok == EOS:
+                hit_eos = True
+                break
+            generated.append(tok)
+            ctx = ctx + (tok,)
+        self._last_hit_eos = hit_eos
+        return generated
+
+    # ------------------------------------------------------------------ pillar 1
+    def classify_intent(self, text: str) -> Tuple[Optional[str], Optional[str]]:
+        """Return (intent, captured_topic) using ordered regex rules."""
+        for name, pat in self.INTENT_PATTERNS:
+            m = pat.search(text)
+            if m:
+                topic = m.group(m.lastindex) if name == "OPINION" and m.lastindex else None
+                return name, topic
+        return None, None
+
+    # ------------------------------------------------------------------ pillar 2
+    def resolve_coreference(self, tokens: List[str]) -> List[str]:
+        """Replace 3rd-person pronouns with the remembered entity when no entity is named."""
+        if any(t in self.entities for t in tokens) or not self.last_entity:
+            return tokens
+        return [self.last_entity if t in self.PRONOUNS else t for t in tokens]
+
+    def _update_memory(self, tokens: List[str]):
+        named = [t for t in tokens if t in self.entities]
+        if named:
+            self.last_entity = named[-1]
+
+    # ------------------------------------------------------------------ pillar 4
+    def reflect(self, text: str) -> str:
+        """ELIZA-style pronoun reversal (first <-> second person)."""
+        return " ".join(self.REFLECTIONS.get(w.lower(), w) for w in text.split())
+
+    # ------------------------------------------------------------------ pillar 3
+    def _log_prob(self, seq: List[str]) -> float:
+        """Average add-1 smoothed log-probability (with bigram backoff) of a sequence."""
+        V = len(self.vocabulary) + 1
+        total, n = 0.0, 0
+        for i in range(1, len(seq)):
+            w = seq[i]
+            if self.n == 3 and i >= 2 and (seq[i - 2], seq[i - 1]) in self.ctx_totals_tri:
+                c = self.trigram_counts.get((seq[i - 2], seq[i - 1], w), 0)
+                d = self.ctx_totals_tri[(seq[i - 2], seq[i - 1])]
+            else:
+                c = self.bigram_counts.get((seq[i - 1], w), 0)
+                d = self.ctx_totals_bi.get(seq[i - 1], 0)
+            total += math.log((c + 1) / (d + V))
+            n += 1
+        return total / max(n, 1)
+
+    def score_candidate(self, tokens: List[str], topics: set, ended: bool) -> float:
+        if not tokens:
+            return -1e9
+        relevance = 2.0 * len(set(tokens) & topics)
+        fluency = self._log_prob([BOS] + tokens + ([EOS] if ended else []))
+        dangling = 5.0 if tokens[-1] in self.DANGLING else 0.0
+        length = 0.0
+        if len(tokens) < 4:
+            length += 3.0
+        if len(tokens) > 25:
+            length += 0.2 * (len(tokens) - 25)
+        if not ended:
+            length += 1.5
+        grams = list(zip(tokens, tokens[1:]))
+        repetition = 1.5 * (len(grams) - len(set(grams)))
+        return relevance + fluency - dangling - length - repetition
+
+    def _best_of_k(self, seed: List[str], topics: set) -> List[str]:
+        best, best_score = seed, -1e18
+        for _ in range(self.k_candidates):
+            cont = self._generate_from_context(tuple([BOS] + seed), max_tokens=self.max_len)
+            cand = seed + cont
+            s = self.score_candidate(cand, topics, self._last_hit_eos)
+            if s > best_score:
+                best, best_score = cand, s
+        self.last_scores = best_score
+        return best
+
+    def _seed_for(self, tokens: List[str]) -> List[str]:
+        """Pick a seed (1-2 tokens) from the user's content words."""
+        kws = self.extract_keywords(" ".join(tokens))
+        if not kws:
+            return []
+        # Prefer entity-bearing phrases
+        kws.sort(key=lambda k: (not any(t in self.entities for t in k), -len(k)))
+        return list(kws[0])
+
+    # ------------------------------------------------------------------ pipeline
+    def respond(self, user_input: str) -> str:
+        intent, topic = self.classify_intent(user_input)
+        self.last_intent = intent
+
+        if intent in self.INTENT_RESPONSES:
+            reply = self.rng.choice(self.INTENT_RESPONSES[intent])
+            self.history.append((user_input, reply))
+            return reply
+
+        tokens = preprocess_text(topic if intent == "OPINION" else user_input)
+        tokens = self.resolve_coreference(tokens)
+        self._update_memory(tokens)
+        topics = {t for t in tokens if t not in DEFAULT_STOPWORDS and t in self.vocabulary}
+
+        seed = self._seed_for(tokens)
+        is_oov = not seed
+        if is_oov and self.last_entity:
+            seed = [self.last_entity]  # fall back to conversational memory
+        body = self._best_of_k(seed, topics)
+
+        prefix: List[str] = []
+        if intent == "OPINION":
+            topic_text = " ".join(AUSTEN_PROPER_NOUNS.get(t, t) for t in (seed or tokens))
+            prefix = self.rng.choice(self.OPINION_FRAMES).format(topic=topic_text).split()
+        elif is_oov:
+            prefix = self.rng.choice(self.PERIOD_DEFLECTIONS).split()
+        elif re.match(r"^\s*i\b", user_input, re.I) and self.rng.random() < 0.5:
+            prefix = (f"You say {self.reflect(user_input.strip().rstrip('.!?'))}? Well,").split()
+
+        reply = self.format_response(prefix + body)
+        self.history.append((user_input, reply))
+        return reply
+
+
 # Registry mapping string identifiers to chatbot classes
 CHATBOT_REGISTRY: Dict[str, type] = {
     "keyword": KeywordSeededChatbot,
+    "intelligent": IntelligentChatbot,
 }

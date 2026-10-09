@@ -6,6 +6,7 @@ from .chatbot import (
     CHATBOT_REGISTRY,
     BaseChatbot,
     KeywordSeededChatbot,
+    IntelligentChatbot,
 )
 from .data import load_corpus, set_seed
 from .eda import compute_corpus_stats, plot_eda
@@ -72,6 +73,7 @@ __all__ = [
     "sample_with_temperature",
     "BaseChatbot",
     "KeywordSeededChatbot",
+    "IntelligentChatbot",
     "CHATBOT_REGISTRY",
     "NGramCounter",
 ]

@@ -32,7 +32,8 @@ def print_banner(bot):
     print("Special commands:")
     print("  /temp <float>   Set sampling temperature (e.g., /temp 0.5 or /temp 1.2)")
     print("  /model <2|3>    Switch between Bigram (2) and Trigram (3)")
-    print("  /bot <name>     Switch chatbot architecture (available: keyword)")
+    print("  /bot <name>     Switch chatbot architecture (available: keyword, intelligent)")
+    print("  /history        Show conversational memory (intelligent bot)")
     print("  /info           Show current model configuration")
     print("  /help           Show available commands")
     print("  exit / quit     Exit the conversation")
@@ -43,7 +44,8 @@ def print_help():
     print("\nAvailable in-chat commands:")
     print("  /temp <val>   Set sampling temperature (> 0.0). Lower = safer, Higher = creative.")
     print("  /model <2|3>  Switch between 2 (Bigram) and 3 (Trigram).")
-    print("  /bot <name>   Switch chatbot class (available: 'keyword').")
+    print("  /bot <name>   Switch chatbot class (available: 'keyword', 'intelligent').")
+    print("  /history      Show remembered entity, last intent and recent turns.")
     print("  /info         Show current model configuration and corpus vocabulary.")
     print("  /help         Show this help message.")
     print("  exit / quit   Leave the conversation.\n")
@@ -72,9 +74,9 @@ def main():
     )
     parser.add_argument(
         "--bot",
-        default="keyword",
+        default="intelligent",
         choices=list(CHATBOT_REGISTRY.keys()),
-        help="Chatbot architecture to use (default: 'keyword')",
+        help="Chatbot architecture to use (default: 'intelligent')",
     )
     parser.add_argument(
         "--quick",
@@ -177,6 +179,17 @@ def main():
                 print(f"  N-gram model  : {model_name}")
                 print(f"  Temperature   : {bot.temperature:.2f}")
                 print(f"  Vocabulary    : {len(bot.vocabulary):,} words\n")
+                continue
+
+            elif cmd == "/history":
+                if not hasattr(bot, "history"):
+                    print("This chatbot has no conversational memory.")
+                else:
+                    print(f"\nRemembered entity: {getattr(bot, 'last_entity', None)}")
+                    print(f"Last intent      : {getattr(bot, 'last_intent', None)}")
+                    for i, (u, r) in enumerate(bot.history[-5:], 1):
+                        print(f"  [{i}] You: {u}\n      Bot: {r}")
+                    print()
                 continue
 
             else:

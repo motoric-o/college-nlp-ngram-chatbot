@@ -70,6 +70,8 @@ AUSTEN_PROPER_NOUNS = {
 class BaseChatbot:
     """Abstract base class for all N-Gram chatbot architectures."""
 
+    PROPER_NOUNS: Dict[str, str] = AUSTEN_PROPER_NOUNS
+
     def __init__(
         self,
         corpus_name: str = "pride",
@@ -138,8 +140,8 @@ class BaseChatbot:
             if tok in (BOS, EOS):
                 continue
             # Proper noun capitalization
-            if tok in AUSTEN_PROPER_NOUNS:
-                formatted.append(AUSTEN_PROPER_NOUNS[tok])
+            if tok in self.PROPER_NOUNS:
+                formatted.append(self.PROPER_NOUNS[tok])
             elif tok == "i":
                 formatted.append("I")
             else:
@@ -391,7 +393,7 @@ class IntelligentChatbot(KeywordSeededChatbot):
         self.ctx_totals_bi = {w: sum(c for _, c in f) for w, f in self.bi_followers.items()}
         self.ctx_totals_tri = {p: sum(c for _, c in f) for p, f in self.tri_followers.items()}
         # Known entities = proper nouns present in the vocabulary
-        self.entities = {w for w in AUSTEN_PROPER_NOUNS if w in self.vocabulary
+        self.entities = {w for w in self.PROPER_NOUNS if w in self.vocabulary
                          and w not in ("mr", "mrs", "miss", "lady")}
 
     def _generate_from_context(self, context: Tuple[str, ...], max_tokens: int = 30) -> List[str]:
@@ -524,7 +526,7 @@ class IntelligentChatbot(KeywordSeededChatbot):
 
         prefix: List[str] = []
         if intent == "OPINION":
-            topic_text = " ".join(AUSTEN_PROPER_NOUNS.get(t, t) for t in (seed or tokens))
+            topic_text = " ".join(self.PROPER_NOUNS.get(t, t) for t in (seed or tokens))
             prefix = self.rng.choice(self.OPINION_FRAMES).format(topic=topic_text).split()
         elif is_oov:
             prefix = self.rng.choice(self.PERIOD_DEFLECTIONS).split()
@@ -536,8 +538,76 @@ class IntelligentChatbot(KeywordSeededChatbot):
         return reply
 
 
+class DailyDialogChatbot(IntelligentChatbot):
+    """IntelligentChatbot adapted to modern casual English (DailyDialog corpus).
+
+    Same 4 pillars, but with a modern persona and topic-based memory: DailyDialog has
+    few recurring named characters, so 'it'/'that'/'they' resolve to the last topic noun.
+    """
+
+    PROPER_NOUNS: Dict[str, str] = {}
+
+    INTENT_RESPONSES = {
+        "GREETING": [
+            "Hey! How's it going?",
+            "Hi there! What's up?",
+            "Hello! Nice to meet you. How are you today?",
+        ],
+        "FAREWELL": [
+            "Bye! Take care.",
+            "See you later! Have a nice day.",
+        ],
+        "IDENTITY": [
+            "I'm a little chatbot built from a trigram model of everyday conversations.",
+            "Just a statistical chatbot. I learned to talk from thousands of daily dialogues.",
+        ],
+        "THANKS": [
+            "You're welcome!",
+            "No problem at all.",
+        ],
+    }
+
+    OPINION_FRAMES = [
+        "Honestly, about {topic}, I think",
+        "Well, when it comes to {topic},",
+        "Hmm, {topic}? I guess",
+    ]
+
+    PERIOD_DEFLECTIONS = [
+        "I'm not really sure about that, but",
+        "Hmm, I don't know much about that. Anyway,",
+        "That's a tough one. I guess",
+    ]
+
+    TOPIC_PRONOUNS = {"it", "that", "this", "they", "them"}
+
+    def __init__(self, corpus_name: str = "dailydialog", *args, **kwargs):
+        if corpus_name in ("pride", "pride_and_prejudice"):
+            corpus_name = "dailydialog"  # this persona only makes sense on dialogue data
+        super().__init__(corpus_name, *args, **kwargs)
+        self.last_topic: Optional[str] = None
+
+    def _topic_words(self, tokens: List[str]) -> List[str]:
+        return [t for t in tokens if t not in DEFAULT_STOPWORDS
+                and t not in self.TOPIC_PRONOUNS and t in self.vocabulary and len(t) > 2]
+
+    def resolve_coreference(self, tokens: List[str]) -> List[str]:
+        if not self.last_topic:
+            return tokens
+        return [self.last_topic if t in self.TOPIC_PRONOUNS else t for t in tokens]
+
+    def _update_memory(self, tokens: List[str]):
+        words = self._topic_words(tokens)
+        if self.last_topic in words:
+            return  # still talking about the same thing
+        if words:
+            self.last_topic = words[-1]
+            self.last_entity = self.last_topic  # keeps /history and fallback seeding working
+
+
 # Registry mapping string identifiers to chatbot classes
 CHATBOT_REGISTRY: Dict[str, type] = {
     "keyword": KeywordSeededChatbot,
     "intelligent": IntelligentChatbot,
+    "daily": DailyDialogChatbot,
 }

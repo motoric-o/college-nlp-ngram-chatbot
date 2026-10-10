@@ -7,6 +7,7 @@ from .chatbot import (
     BaseChatbot,
     KeywordSeededChatbot,
     IntelligentChatbot,
+    DailyDialogChatbot,
 )
 from .data import load_corpus, set_seed
 from .eda import compute_corpus_stats, plot_eda
@@ -74,6 +75,7 @@ __all__ = [
     "BaseChatbot",
     "KeywordSeededChatbot",
     "IntelligentChatbot",
+    "DailyDialogChatbot",
     "CHATBOT_REGISTRY",
     "NGramCounter",
 ]

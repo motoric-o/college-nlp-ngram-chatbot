@@ -14,7 +14,88 @@ if not DATA_DIR.exists():
         DATA_DIR = PARENT_DATA
 
 
+DAILYDIALOG_URL = "https://huggingface.co/datasets/roskoN/dailydialog/resolve/main/train.zip"
+DAILYDIALOG_DIR = PACKAGE_ROOT / "data" / "dailydialog"
+
+# Contraction suffixes -> expanded words (our preprocessing keeps alphabetic tokens only,
+# so "I ' m" would otherwise become the broken pair "i m").
+_CONTRACTIONS = {"m": "am", "re": "are", "ve": "have", "ll": "will", "d": "would"}
+_S_IS_HOSTS = {"it", "that", "he", "she", "what", "there", "here", "who", "where", "how", "let"}
+_NT_SPECIAL = {"won": "will", "can": "can", "shan": "shall", "ain": "is"}
+
+
+def _expand_contractions(tokens):
+    out = []
+    i = 0
+    while i < len(tokens):
+        tok = tokens[i]
+        nxt = tokens[i + 1] if i + 1 < len(tokens) else None
+        nxt2 = tokens[i + 2] if i + 2 < len(tokens) else None
+        if nxt == "'" and nxt2 is not None:
+            suf = nxt2.lower()
+            if suf == "t" and tok.lower().endswith("n"):
+                base = tok[:-1]
+                out.append(_NT_SPECIAL.get(tok.lower(), base) or base)
+                out.append("not")
+                i += 3
+                continue
+            if suf in _CONTRACTIONS:
+                out += [tok, _CONTRACTIONS[suf]]
+                i += 3
+                continue
+            if suf == "s":
+                out.append(tok)
+                if tok.lower() == "let":
+                    out.append("us")
+                elif tok.lower() in _S_IS_HOSTS:
+                    out.append("is")
+                i += 3
+                continue
+        out.append(tok)
+        i += 1
+    return out
+
+
+def load_daily_dialog():
+    """Load DailyDialog (train split) as a list of tokenized sentences.
+
+    Each dialogue line holds utterances separated by '__eou__'. Utterances are split
+    further into sentences on terminal punctuation.
+    """
+    path = DAILYDIALOG_DIR / "dialogues_train.txt"
+    if not path.exists():
+        import io
+        import urllib.request
+        import zipfile
+
+        req = urllib.request.Request(DAILYDIALOG_URL, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req) as resp:
+            data = resp.read()
+        with zipfile.ZipFile(io.BytesIO(data)) as z:
+            content = z.read("train/dialogues_train.txt")
+        DAILYDIALOG_DIR.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(content)
+
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    text = text.replace("\u2019", "'").replace("\u2018", "'")
+    sentences = []
+    for line in text.splitlines():
+        for utt in line.split("__eou__"):
+            tokens = _expand_contractions(utt.split())
+            current = []
+            for tok in tokens:
+                current.append(tok)
+                if tok in (".", "?", "!"):
+                    sentences.append(current)
+                    current = []
+            if current:
+                sentences.append(current)
+    return [s for s in sentences if s]
+
+
 def load_corpus(name="pride"):
+    if name in ("dailydialog", "daily_dialog"):
+        return load_daily_dialog()
     readers = {
         "pride": "gutenberg",
         "pride_and_prejudice": "gutenberg",
@@ -22,7 +103,7 @@ def load_corpus(name="pride"):
         "reuters": "reuters",
     }
     if name not in readers:
-        raise ValueError(f"Corpus harus salah satu {tuple(readers)}")
+        raise ValueError(f"Corpus harus salah satu {tuple(readers) + ('dailydialog',)}")
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     if str(DATA_DIR) not in nltk.data.path:
         nltk.data.path.insert(0, str(DATA_DIR))

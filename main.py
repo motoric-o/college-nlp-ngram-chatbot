@@ -25,14 +25,14 @@ def print_banner(bot):
     model_name = "Trigram (N=3)" if bot.n == 3 else "Bigram (N=2)"
     bot_class_name = bot.__class__.__name__
     print("\n" + "=" * 70)
-    print("  N-GRAM CHATBOT: JANE AUSTEN (Pride & Prejudice)")
+    print(f"  N-GRAM CHATBOT  |  Corpus: {bot.corpus_name}")
     print(f"  Bot: {bot_class_name} | Model: {model_name} | Temp: {bot.temperature:.2f}")
     print("=" * 70)
     print("Type your message and press Enter.")
     print("Special commands:")
     print("  /temp <float>   Set sampling temperature (e.g., /temp 0.5 or /temp 1.2)")
     print("  /model <2|3>    Switch between Bigram (2) and Trigram (3)")
-    print("  /bot <name>     Switch chatbot architecture (available: keyword, intelligent)")
+    print("  /bot <name>     Switch chatbot architecture (available: keyword, intelligent, daily)")
     print("  /history        Show conversational memory (intelligent bot)")
     print("  /info           Show current model configuration")
     print("  /help           Show available commands")
@@ -44,7 +44,7 @@ def print_help():
     print("\nAvailable in-chat commands:")
     print("  /temp <val>   Set sampling temperature (> 0.0). Lower = safer, Higher = creative.")
     print("  /model <2|3>  Switch between 2 (Bigram) and 3 (Trigram).")
-    print("  /bot <name>   Switch chatbot class (available: 'keyword', 'intelligent').")
+    print("  /bot <name>   Switch chatbot class (available: 'keyword', 'intelligent', 'daily').")
     print("  /history      Show remembered entity, last intent and recent turns.")
     print("  /info         Show current model configuration and corpus vocabulary.")
     print("  /help         Show this help message.")
@@ -56,7 +56,7 @@ def main():
     parser.add_argument(
         "--corpus",
         default="pride",
-        choices=["pride", "pride_and_prejudice", "brown", "reuters"],
+        choices=["pride", "pride_and_prejudice", "brown", "reuters", "dailydialog"],
         help="Corpus to train on (default: 'pride')",
     )
     parser.add_argument(

@@ -7,12 +7,14 @@ Provides:
   - CHATBOT_REGISTRY: Factory dictionary to easily register and instantiate different chatbot classes.
 """
 
+import heapq
 import math
 import random
 import re
+from collections import defaultdict
 from typing import Dict, List, Optional, Tuple
 
-from .data import load_corpus, set_seed
+from .data import load_corpus, load_dialogue_pairs, set_seed
 from .ngram import (
     BOS,
     EOS,
@@ -605,9 +607,202 @@ class DailyDialogChatbot(IntelligentChatbot):
             self.last_entity = self.last_topic  # keeps /history and fallback seeding working
 
 
+DIALOGUE_STOPWORDS = {
+    "a", "an", "the", "and", "or", "in", "on", "at", "to", "for", "with",
+    "by", "of", "is", "am", "are", "was", "were", "be", "been", "being",
+    "do", "does", "did", "have", "has", "had", "it", "this", "that",
+}
+
+
+def extract_dialogue_features(text: str) -> set:
+    """Extract unigrams and bigrams from dialogue text for fast inverted indexing."""
+    tokens = [w.lower() for w in re.findall(r"\b\w+\b", text)]
+    unigrams = [w for w in tokens if w not in DIALOGUE_STOPWORDS]
+    bigrams = [
+        f"{tokens[i]}_{tokens[i+1]}"
+        for i in range(len(tokens) - 1)
+        if tokens[i] not in DIALOGUE_STOPWORDS or tokens[i + 1] not in DIALOGUE_STOPWORDS
+    ]
+    return set(unigrams + bigrams)
+
+
+class DialoguePairIndex:
+    """Inverted index with BM25/TF-IDF scoring over dialogue prompt-response pairs."""
+
+    def __init__(self, pairs: List[Tuple[str, str]]):
+        self.pairs = pairs
+        self.inv_index: Dict[str, List[int]] = defaultdict(list)
+        for idx, (p, _) in enumerate(pairs):
+            feats = extract_dialogue_features(p)
+            for f in feats:
+                self.inv_index[f].append(idx)
+        self.N = len(pairs)
+        self.idf = {
+            f: math.log((self.N + 1) / (len(p) + 1)) + 1.0
+            for f, p in self.inv_index.items()
+        }
+
+    def search(self, query: str, top_m: int = 5) -> List[Tuple[Tuple[str, str], float]]:
+        feats = extract_dialogue_features(query)
+        scores: Dict[int, float] = defaultdict(float)
+        for f in feats:
+            if f in self.inv_index:
+                w_idf = self.idf[f]
+                for idx in self.inv_index[f]:
+                    scores[idx] += w_idf
+        if not scores:
+            return []
+        top = heapq.nlargest(top_m, scores.items(), key=lambda x: x[1])
+        return [(self.pairs[idx], score) for idx, score in top]
+
+
+class SmartChatbot(DailyDialogChatbot):
+    """Smart Hybrid Dialogue Chatbot.
+
+    Combines:
+      1. Conversational intent / speech-act handling.
+      2. Dialogue turn-pair inverted index (DailyDialog) for authentic conversational responses.
+      3. Temperature-scaled N-gram generative completion and hybrid synthesis.
+      4. Coreference / pronoun memory tracking across turns.
+      5. Multi-criteria re-ranking: dialogue relevance, topic overlap, and N-gram fluency.
+    """
+
+    _CACHED_INDEX: Optional[DialoguePairIndex] = None
+
+    def __init__(self, corpus_name: str = "dailydialog", *args, **kwargs):
+        super().__init__(corpus_name=corpus_name, *args, **kwargs)
+        self.dialogue_index = self._get_or_build_index()
+
+    def _get_or_build_index(self) -> DialoguePairIndex:
+        if SmartChatbot._CACHED_INDEX is not None:
+            return SmartChatbot._CACHED_INDEX
+
+        if self.quick:
+            sample_pairs = [
+                ("Hello", "Hi there! How can I help you?"),
+                ("I want to buy a computer", "Well, you can get an excellent deal on a new computer here."),
+                ("How much does it cost?", "It costs 125 dollars a month."),
+            ]
+            SmartChatbot._CACHED_INDEX = DialoguePairIndex(sample_pairs)
+        else:
+            pairs = load_dialogue_pairs()
+            SmartChatbot._CACHED_INDEX = DialoguePairIndex(pairs)
+
+        return SmartChatbot._CACHED_INDEX
+
+    def _format_raw_reply(self, text: str) -> str:
+        """Clean spacing and capitalization for raw dialogue replies."""
+        cleaned = re.sub(r"\s+([',.!?;:])", r"\1", text.strip())
+        cleaned = re.sub(r"([A-Za-z])\s+('\w+)", r"\1\2", cleaned)
+        if cleaned:
+            cleaned = cleaned[0].upper() + cleaned[1:]
+            if cleaned[-1] not in ".!?":
+                cleaned += "."
+        return cleaned
+
+    def respond(self, user_input: str) -> str:
+        # 1. Intent classification
+        intent, topic = self.classify_intent(user_input)
+        self.last_intent = intent
+
+        if intent in self.INTENT_RESPONSES:
+            reply = self.rng.choice(self.INTENT_RESPONSES[intent])
+            self.history.append((user_input, reply))
+            return reply
+
+        # 2. Extract content tokens & update conversational memory
+        tokens = preprocess_text(topic if intent == "OPINION" else user_input)
+        resolved_tokens = self.resolve_coreference(tokens)
+        self._update_memory(resolved_tokens)
+
+        content_words = {
+            t for t in resolved_tokens
+            if t not in DEFAULT_STOPWORDS and len(t) > 2
+        }
+
+        # Enrich query with last_topic if pronoun is used without a major noun
+        enriched_query = user_input
+        if any(p in tokens for p in self.TOPIC_PRONOUNS) and self.last_topic:
+            enriched_query = f"{user_input} {self.last_topic}"
+
+        # 3. Retrieve dialogue pairs
+        retrieved = self.dialogue_index.search(enriched_query, top_m=5)
+
+        candidates = []
+        for (p, r), match_score in retrieved:
+            r_tokens = preprocess_text(r)
+            if r_tokens:
+                # Channel A: Authentic dialogue response
+                formatted_r = self._format_raw_reply(r)
+                candidates.append((r_tokens, formatted_r, match_score, "retrieval"))
+
+                # Channel B: N-Gram hybrid continuation seeded from response opener
+                if len(r_tokens) >= 2:
+                    opener = tuple(r_tokens[:2])
+                    cont = self._generate_from_context(tuple([BOS] + list(opener)), max_tokens=self.max_len)
+                    if cont:
+                        hybrid_tokens = list(opener) + cont
+                        candidates.append((hybrid_tokens, self.format_response(hybrid_tokens), match_score * 0.7, "hybrid"))
+
+        # Channel C: Pure N-Gram generation from topic seed or memory
+        seed = self._seed_for(resolved_tokens)
+        if not seed and self.last_topic:
+            seed = [self.last_topic]
+        if seed:
+            cont = self._generate_from_context(tuple([BOS] + seed), max_tokens=self.max_len)
+            pure_tokens = seed + cont
+            candidates.append((pure_tokens, self.format_response(pure_tokens), 0.0, "pure_ngram"))
+
+        if not candidates:
+            # Fallback
+            prefix = self.rng.choice(self.PERIOD_DEFLECTIONS).split()
+            cont = self._generate_from_context((BOS,), max_tokens=self.max_len)
+            reply = self.format_response(prefix + cont)
+            self.history.append((user_input, reply))
+            return reply
+
+        # 4. Multi-Criteria Scoring: Fluency + Match + Topic Overlap - Penalties
+        scored_candidates = []
+        for cand_tokens, cand_text, match_score, c_type in candidates:
+            lm_score = self._log_prob([BOS] + cand_tokens + [EOS])
+            topic_overlap = len(set(cand_tokens) & content_words)
+            dangling = 5.0 if cand_tokens[-1] in self.DANGLING else 0.0
+            length_pen = 0.0
+            if len(cand_tokens) < 3:
+                length_pen += 3.0
+            elif len(cand_tokens) > 25:
+                length_pen += 0.1 * (len(cand_tokens) - 25)
+
+            grams = list(zip(cand_tokens, cand_tokens[1:]))
+            repetition = 1.5 * (len(grams) - len(set(grams)))
+
+            total_score = (
+                (match_score * 0.4)
+                + (topic_overlap * 3.5)
+                + lm_score
+                - dangling
+                - length_pen
+                - repetition
+            )
+            scored_candidates.append((total_score, cand_text))
+
+        scored_candidates.sort(key=lambda x: -x[0])
+        best_reply = scored_candidates[0][1]
+
+        # Final persona wrap for opinion intent if present
+        if intent == "OPINION":
+            topic_str = " ".join(content_words) if content_words else "that"
+            opener = self.rng.choice(self.OPINION_FRAMES).format(topic=topic_str)
+            best_reply = f"{opener} {best_reply[0].lower() + best_reply[1:]}"
+
+        self.history.append((user_input, best_reply))
+        return best_reply
+
+
 # Registry mapping string identifiers to chatbot classes
 CHATBOT_REGISTRY: Dict[str, type] = {
     "keyword": KeywordSeededChatbot,
     "intelligent": IntelligentChatbot,
     "daily": DailyDialogChatbot,
+    "smart": SmartChatbot,
 }

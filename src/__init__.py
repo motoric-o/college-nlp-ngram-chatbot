@@ -8,8 +8,10 @@ from .chatbot import (
     KeywordSeededChatbot,
     IntelligentChatbot,
     DailyDialogChatbot,
+    SmartChatbot,
+    DialoguePairIndex,
 )
-from .data import load_corpus, set_seed
+from .data import load_corpus, load_dialogue_pairs, set_seed
 from .eda import compute_corpus_stats, plot_eda
 from .ngram import (
     NGramCounter,
@@ -76,6 +78,9 @@ __all__ = [
     "KeywordSeededChatbot",
     "IntelligentChatbot",
     "DailyDialogChatbot",
+    "SmartChatbot",
+    "DialoguePairIndex",
+    "load_dialogue_pairs",
     "CHATBOT_REGISTRY",
     "NGramCounter",
 ]

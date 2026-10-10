@@ -32,8 +32,8 @@ def print_banner(bot):
     print("Special commands:")
     print("  /temp <float>   Set sampling temperature (e.g., /temp 0.5 or /temp 1.2)")
     print("  /model <2|3>    Switch between Bigram (2) and Trigram (3)")
-    print("  /bot <name>     Switch chatbot architecture (available: keyword, intelligent, daily)")
-    print("  /history        Show conversational memory (intelligent bot)")
+    print("  /bot <name>     Switch chatbot architecture (available: keyword, intelligent, daily, smart)")
+    print("  /history        Show conversational memory (intelligent/daily/smart bot)")
     print("  /info           Show current model configuration")
     print("  /help           Show available commands")
     print("  exit / quit     Exit the conversation")
@@ -44,7 +44,7 @@ def print_help():
     print("\nAvailable in-chat commands:")
     print("  /temp <val>   Set sampling temperature (> 0.0). Lower = safer, Higher = creative.")
     print("  /model <2|3>  Switch between 2 (Bigram) and 3 (Trigram).")
-    print("  /bot <name>   Switch chatbot class (available: 'keyword', 'intelligent', 'daily').")
+    print("  /bot <name>   Switch chatbot class (available: 'keyword', 'intelligent', 'daily', 'smart').")
     print("  /history      Show remembered entity, last intent and recent turns.")
     print("  /info         Show current model configuration and corpus vocabulary.")
     print("  /help         Show this help message.")
@@ -55,9 +55,9 @@ def main():
     parser = argparse.ArgumentParser(description="Interactive N-Gram Chatbot")
     parser.add_argument(
         "--corpus",
-        default="pride",
+        default="dailydialog",
         choices=["pride", "pride_and_prejudice", "brown", "reuters", "dailydialog"],
-        help="Corpus to train on (default: 'pride')",
+        help="Corpus to train on (default: 'dailydialog')",
     )
     parser.add_argument(
         "--model",
@@ -74,9 +74,9 @@ def main():
     )
     parser.add_argument(
         "--bot",
-        default="intelligent",
+        default="smart",
         choices=list(CHATBOT_REGISTRY.keys()),
-        help="Chatbot architecture to use (default: 'intelligent')",
+        help="Chatbot architecture to use (default: 'smart')",
     )
     parser.add_argument(
         "--quick",
@@ -91,10 +91,15 @@ def main():
     )
     args = parser.parse_args()
 
-    print(f"[*] Initializing {args.bot.capitalize()} Chatbot on corpus '{args.corpus}'...")
+    # Automatically adapt default corpus if historical bot is selected
+    corpus = args.corpus
+    if args.bot in ("keyword", "intelligent") and "--corpus" not in sys.argv:
+        corpus = "pride"
+
+    print(f"[*] Initializing {args.bot.capitalize()} Chatbot on corpus '{corpus}'...")
     bot_class = CHATBOT_REGISTRY[args.bot]
     bot = bot_class(
-        corpus_name=args.corpus,
+        corpus_name=corpus,
         n=args.model,
         temperature=args.temp,
         quick=args.quick,
@@ -159,8 +164,13 @@ def main():
                     target_bot = parts[1].lower()
                     if target_bot in CHATBOT_REGISTRY:
                         bot_class = CHATBOT_REGISTRY[target_bot]
+                        new_corpus = args.corpus
+                        if target_bot in ("smart", "daily"):
+                            new_corpus = "dailydialog"
+                        elif target_bot in ("keyword", "intelligent") and args.corpus == "dailydialog":
+                            new_corpus = "pride"
                         bot = bot_class(
-                            corpus_name=args.corpus,
+                            corpus_name=new_corpus,
                             n=bot.n,
                             temperature=bot.temperature,
                             quick=args.quick,

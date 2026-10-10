@@ -93,6 +93,21 @@ def load_daily_dialog():
     return [s for s in sentences if s]
 
 
+def load_dialogue_pairs():
+    """Load consecutive (turn_1, turn_2) prompt-response dialogue pairs from DailyDialog."""
+    load_daily_dialog()
+    path = DAILYDIALOG_DIR / "dialogues_train.txt"
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    text = text.replace("\u2019", "'").replace("\u2018", "'")
+    pairs = []
+    for line in text.splitlines():
+        turns = [u.strip() for u in line.split("__eou__") if u.strip()]
+        for i in range(len(turns) - 1):
+            if turns[i] and turns[i + 1]:
+                pairs.append((turns[i], turns[i + 1]))
+    return pairs
+
+
 def load_corpus(name="pride"):
     if name in ("dailydialog", "daily_dialog"):
         return load_daily_dialog()

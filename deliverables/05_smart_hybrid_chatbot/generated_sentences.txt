@@ -1,0 +1,29 @@
+===========================================================================
+  SMART HYBRID CHATBOT: 5 GENERATED RESPONSES
+  Architecture: Retrieval-Augmented N-Gram Fusion (DailyDialog)
+===========================================================================
+
+Turn 1:
+  User  : Hello! How are you doing today?
+  Smart : Hello! Nice to meet you. How are you today?
+  [State]: Topic = None | Intent = GREETING
+
+Turn 2:
+  User  : I want to buy a computer.
+  Smart : Well, you heard right.You can get an excellent deal on a new computer here.We have great discounts for students.
+  [State]: Topic = computer | Intent = None
+
+Turn 3:
+  User  : How much does it cost?
+  Smart : It costs 125 dollars a month.
+  [State]: Topic = computer | Intent = None
+
+Turn 4:
+  User  : Can you recommend a good laptop?
+  Smart : What about the Yellowstone National Park?
+  [State]: Topic = laptop | Intent = None
+
+Turn 5:
+  User  : Thank you so much, that was very helpful!
+  Smart : No problem at all.
+  [State]: Topic = laptop | Intent = THANKS

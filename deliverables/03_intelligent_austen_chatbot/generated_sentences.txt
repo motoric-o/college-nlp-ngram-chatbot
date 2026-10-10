@@ -1,0 +1,30 @@
+===========================================================================
+  INTELLIGENT AUSTEN CHATBOT: 5 GENERATED RESPONSES
+  Features: Intent Classification, Coreference Memory, Best-of-5 Scoring
+  Corpus: Jane Austen's 'Pride and Prejudice'
+===========================================================================
+
+Turn 1:
+  User   : Good day! How do you do?
+  Austen : Good day! Pray, what news do you bring from the neighbourhood?
+  [State]: Last Entity = None | Last Intent = GREETING
+
+Turn 2:
+  User   : What do you think of Mr. Darcy?
+  Austen : Upon the subject of Mr. Darcy, I am inclined to think that Mr. Darcy she paid no credit.
+  [State]: Last Entity = darcy | Last Intent = OPINION
+
+Turn 3:
+  User   : Is he proud?
+  Austen : Darcy is not sound.
+  [State]: Last Entity = darcy | Last Intent = None
+
+Turn 4:
+  User   : I feel rather fatigued by this journey.
+  Austen : Feel herself called to partake of her nephew which had been in town.
+  [State]: Last Entity = darcy | Last Intent = None
+
+Turn 5:
+  User   : Farewell, I must take my leave.
+  Austen : I take my leave of you with the utmost civility. Farewell!
+  [State]: Last Entity = darcy | Last Intent = FAREWELL

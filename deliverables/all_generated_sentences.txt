@@ -1,0 +1,163 @@
+
+
+################################################################################===========================================================================
+  DELIVERABLE 3: FIVE GENERATED SENTENCES FOR N-GRAM MODELS
+  Corpus: Jane Austen's 'Pride and Prejudice'
+===========================================================================
+
+---------------------------------------------------------------------------
+1. BIGRAM MODEL (MLE Distribution - Assignment Deliverable 3)
+---------------------------------------------------------------------------
+  [1] after ourselves that your conceit and also a mutual affection will we must be expected to her chance of the conversation till christmas in useless
+  [2] and jane had some news as little more coarsely might have taken place
+  [3] the advantage
+  [4] from her pleasure of her
+  [5] i dare say do away and of her mansion with her
+
+---------------------------------------------------------------------------
+2. TRIGRAM MODEL (MLE Distribution - Assignment Deliverable 3)
+---------------------------------------------------------------------------
+  [1] but perhaps added he is so violent that it would not do so much altered as she said with the others coming out
+  [2] what does he know that such a time when mr darcy is engaged to
+  [3] if we make haste
+  [4] the communication excited many professions of love and eloquence
+  [5] chapter liv
+
+---------------------------------------------------------------------------
+3. UNIGRAM MODEL (Word Independence Baseline)
+---------------------------------------------------------------------------
+  [1] all know though collins be before last most marry gave when engagements day engage the
+  [2] leaving regard eyes of what smile that you express alone a house that but w
+  [3] his deceived ask almost discharging he and be of with hear inconceivable comparing to of
+  [4] living charlotte which beyond he saturday kitty it bourgh assertions have himself the smile for
+  [5] s s to am of had not yet being to her was be especially a
+
+---------------------------------------------------------------------------
+4. LAPLACE-SMOOTHED BIGRAM MODEL (Add-One Distribution)
+---------------------------------------------------------------------------
+  [1] illustration
+  [2] i am all affability and her heart was not for the same her as to avoid recommending moderation of view from the want your own
+  [3] she was borne in quest of longbourn
+  [4] start at all returned mr wickham had often turned back and though not be differently affected by the same and valued by jane that were
+  [5] he has every review of passion common occasions mrs gardiner had been
+
+
+===========================================================================
+  KEYWORD-SEEDED CHATBOT: 5 GENERATED CONVERSATIONAL RESPONSES
+  Model: Trigram (N=3) | Sampling Temperature: 0.80
+  Corpus: Jane Austen's 'Pride and Prejudice'
+===========================================================================
+
+Turn 1:
+  User : What do you think of Mr. Darcy?
+  Bot  : Mr. Darcy they had been in the morning s walk they had.
+
+Turn 2:
+  User : Tell me about marriage in Hertfordshire.
+  Bot  : Marriage been exactly what I must so far as it seems to be serious.
+
+Turn 3:
+  User : Have you seen Miss Elizabeth Bennet?
+  Bot  : Miss Elizabeth Bennet diana vernon argemone lavington beatrix esmond and barbara.
+
+Turn 4:
+  User : Where is Mr. Bingley staying?
+  Bot  : Mr. Bingley was venting her feelings on this subject to him as much as they were talking together very agreeably when the door and with a smile but Elizabeth could not be.
+
+Turn 5:
+  User : What are your thoughts on Pemberley?
+  Bot  : Thoughts at the door the joyful surprise that lighted up their faces and displayed itself over their whole bodies in a part of the evils attached to me.
+
+
+===========================================================================
+  INTELLIGENT AUSTEN CHATBOT: 5 GENERATED RESPONSES
+  Features: Intent Classification, Coreference Memory, Best-of-5 Scoring
+  Corpus: Jane Austen's 'Pride and Prejudice'
+===========================================================================
+
+Turn 1:
+  User   : Good day! How do you do?
+  Austen : Good day! Pray, what news do you bring from the neighbourhood?
+  [State]: Last Entity = None | Last Intent = GREETING
+
+Turn 2:
+  User   : What do you think of Mr. Darcy?
+  Austen : Upon the subject of Mr. Darcy, I am inclined to think that Mr. Darcy she paid no credit.
+  [State]: Last Entity = darcy | Last Intent = OPINION
+
+Turn 3:
+  User   : Is he proud?
+  Austen : Darcy is not sound.
+  [State]: Last Entity = darcy | Last Intent = None
+
+Turn 4:
+  User   : I feel rather fatigued by this journey.
+  Austen : Feel herself called to partake of her nephew which had been in town.
+  [State]: Last Entity = darcy | Last Intent = None
+
+Turn 5:
+  User   : Farewell, I must take my leave.
+  Austen : I take my leave of you with the utmost civility. Farewell!
+  [State]: Last Entity = darcy | Last Intent = FAREWELL
+
+
+===========================================================================
+  DAILYDIALOG CHATBOT: 5 GENERATED MODERN RESPONSES
+  Corpus: DailyDialog (140,368 conversational utterances)
+===========================================================================
+
+Turn 1:
+  User : Hey there! What's up?
+  Bot  : Hello! Nice to meet you. How are you today?
+  [State]: Topic = None | Intent = GREETING
+
+Turn 2:
+  User : I want to order a coffee.
+  Bot  : You say you want to order a coffee? Well, want to have a really good.
+  [State]: Topic = coffee | Intent = None
+
+Turn 3:
+  User : How much does it cost?
+  Bot  : Coffee please with cream and the battery is it possible that the damage.
+  [State]: Topic = coffee | Intent = None
+
+Turn 4:
+  User : Can you recommend a good movie to watch?
+  Bot  : Recommend going to be a swimmer.
+  [State]: Topic = watch | Intent = None
+
+Turn 5:
+  User : Thanks a lot for your help, see you!
+  Bot  : You're welcome!
+  [State]: Topic = watch | Intent = THANKS
+
+
+===========================================================================
+  SMART HYBRID CHATBOT: 5 GENERATED RESPONSES
+  Architecture: Retrieval-Augmented N-Gram Fusion (DailyDialog)
+===========================================================================
+
+Turn 1:
+  User  : Hello! How are you doing today?
+  Smart : Hello! Nice to meet you. How are you today?
+  [State]: Topic = None | Intent = GREETING
+
+Turn 2:
+  User  : I want to buy a computer.
+  Smart : Well, you heard right.You can get an excellent deal on a new computer here.We have great discounts for students.
+  [State]: Topic = computer | Intent = None
+
+Turn 3:
+  User  : How much does it cost?
+  Smart : It costs 125 dollars a month.
+  [State]: Topic = computer | Intent = None
+
+Turn 4:
+  User  : Can you recommend a good laptop?
+  Smart : What about the Yellowstone National Park?
+  [State]: Topic = laptop | Intent = None
+
+Turn 5:
+  User  : Thank you so much, that was very helpful!
+  Smart : No problem at all.
+  [State]: Topic = laptop | Intent = THANKS

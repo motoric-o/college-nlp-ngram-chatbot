@@ -1,0 +1,29 @@
+===========================================================================
+  DAILYDIALOG CHATBOT: 5 GENERATED MODERN RESPONSES
+  Corpus: DailyDialog (140,368 conversational utterances)
+===========================================================================
+
+Turn 1:
+  User : Hey there! What's up?
+  Bot  : Hello! Nice to meet you. How are you today?
+  [State]: Topic = None | Intent = GREETING
+
+Turn 2:
+  User : I want to order a coffee.
+  Bot  : You say you want to order a coffee? Well, want to have a really good.
+  [State]: Topic = coffee | Intent = None
+
+Turn 3:
+  User : How much does it cost?
+  Bot  : Coffee please with cream and the battery is it possible that the damage.
+  [State]: Topic = coffee | Intent = None
+
+Turn 4:
+  User : Can you recommend a good movie to watch?
+  Bot  : Recommend going to be a swimmer.
+  [State]: Topic = watch | Intent = None
+
+Turn 5:
+  User : Thanks a lot for your help, see you!
+  Bot  : You're welcome!
+  [State]: Topic = watch | Intent = THANKS

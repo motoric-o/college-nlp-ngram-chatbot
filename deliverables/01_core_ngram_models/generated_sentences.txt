@@ -1,0 +1,40 @@
+===========================================================================
+  DELIVERABLE 3: FIVE GENERATED SENTENCES FOR N-GRAM MODELS
+  Corpus: Jane Austen's 'Pride and Prejudice'
+===========================================================================
+
+---------------------------------------------------------------------------
+1. BIGRAM MODEL (MLE Distribution - Assignment Deliverable 3)
+---------------------------------------------------------------------------
+  [1] after ourselves that your conceit and also a mutual affection will we must be expected to her chance of the conversation till christmas in useless
+  [2] and jane had some news as little more coarsely might have taken place
+  [3] the advantage
+  [4] from her pleasure of her
+  [5] i dare say do away and of her mansion with her
+
+---------------------------------------------------------------------------
+2. TRIGRAM MODEL (MLE Distribution - Assignment Deliverable 3)
+---------------------------------------------------------------------------
+  [1] but perhaps added he is so violent that it would not do so much altered as she said with the others coming out
+  [2] what does he know that such a time when mr darcy is engaged to
+  [3] if we make haste
+  [4] the communication excited many professions of love and eloquence
+  [5] chapter liv
+
+---------------------------------------------------------------------------
+3. UNIGRAM MODEL (Word Independence Baseline)
+---------------------------------------------------------------------------
+  [1] all know though collins be before last most marry gave when engagements day engage the
+  [2] leaving regard eyes of what smile that you express alone a house that but w
+  [3] his deceived ask almost discharging he and be of with hear inconceivable comparing to of
+  [4] living charlotte which beyond he saturday kitty it bourgh assertions have himself the smile for
+  [5] s s to am of had not yet being to her was be especially a
+
+---------------------------------------------------------------------------
+4. LAPLACE-SMOOTHED BIGRAM MODEL (Add-One Distribution)
+---------------------------------------------------------------------------
+  [1] illustration
+  [2] i am all affability and her heart was not for the same her as to avoid recommending moderation of view from the want your own
+  [3] she was borne in quest of longbourn
+  [4] start at all returned mr wickham had often turned back and though not be differently affected by the same and valued by jane that were
+  [5] he has every review of passion common occasions mrs gardiner had been

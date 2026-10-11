@@ -9,12 +9,24 @@ Usage:
     python main.py --temp 0.5 --model 3
 """
 
+import os
 import sys
 import argparse
 from pathlib import Path
 
-# Add project root to sys.path so 'src' is always importable
+# If run with global Python where dependencies (nltk, etc.) are missing,
+# automatically re-execute using the project's .venv python
 ROOT_DIR = Path(__file__).resolve().parent
+venv_python = ROOT_DIR / ".venv" / "Scripts" / "python.exe"
+if venv_python.exists() and Path(sys.executable).resolve() != venv_python.resolve():
+    try:
+        import nltk  # test if current python already has packages
+    except ImportError:
+        import subprocess
+        result = subprocess.run([str(venv_python)] + sys.argv, cwd=str(ROOT_DIR))
+        sys.exit(result.returncode)
+
+# Add project root to sys.path so 'src' is always importable
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 

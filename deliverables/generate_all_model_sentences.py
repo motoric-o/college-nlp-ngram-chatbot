@@ -1,7 +1,7 @@
 """Master Generation Runner: Generates 5 sentences across all 5 model folders.
 
 Runs:
-  1. 01_core_ngram_models (Bigram, Trigram, Unigram, Laplace)
+  1. 01_core_ngram_models(unused) (Bigram, Trigram, Unigram, Laplace)
   2. 02_keyword_seeded_chatbot (Pride & Prejudice Keyword Bot)
   3. 03_intelligent_austen_chatbot (Victorian Persona Bot)
   4. 04_dailydialog_chatbot (Modern Casual Bot)
@@ -21,7 +21,7 @@ if not PYTHON_EXE.exists():
     PYTHON_EXE = sys.executable
 
 SCRIPTS = [
-    ("01 Core N-Gram Models", DELIVERABLES_DIR / "01_core_ngram_models" / "generate_5_sentences.py"),
+    ("01 Core N-Gram Models (unused)", DELIVERABLES_DIR / "01_core_ngram_models(unused)" / "generate_5_sentences.py"),
     ("02 Keyword-Seeded Chatbot", DELIVERABLES_DIR / "02_keyword_seeded_chatbot" / "generate_5_sentences.py"),
     ("03 Intelligent Austen Chatbot", DELIVERABLES_DIR / "03_intelligent_austen_chatbot" / "generate_5_sentences.py"),
     ("04 DailyDialog Casual Chatbot", DELIVERABLES_DIR / "04_dailydialog_chatbot" / "generate_5_sentences.py"),

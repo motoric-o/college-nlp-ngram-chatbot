@@ -39,28 +39,28 @@ ngram_chatbot/
 │   ├── all_generated_sentences.txt       # Consolidated export of all generated sentences
 │   ├── build_notebooks.py                # Programmatic builder for all 5 Jupyter Notebooks
 │   │
-│   ├── 01_core_ngram_models/             # [Core Tasks 1 to 17]
-│   │   ├── Core_Ngram_Language_Models.ipynb
+│   ├── 01_core_ngram_models(unused)/     # [Core Tasks 1 to 17]
+│   │   ├── NgramLM_2472040_2472041_2472053_2472901.ipynb
 │   │   ├── generate_5_sentences.py
 │   │   └── generated_sentences.txt
 │   │
 │   ├── 02_keyword_seeded_chatbot/        # [Phase 1 Chatbot]
-│   │   ├── Keyword_Seeded_Chatbot.ipynb
+│   │   ├── NgramLM_Chatbot_KeywordSeeded_2472040_2472041_2472053_2472901.ipynb
 │   │   ├── generate_5_sentences.py
 │   │   └── generated_sentences.txt
 │   │
 │   ├── 03_intelligent_austen_chatbot/    # [Phase 2 Victorian Persona]
-│   │   ├── Intelligent_Austen_Chatbot.ipynb
+│   │   ├── NgramLM_Intelligent_2472040_2472041_2472053_2472901.ipynb
 │   │   ├── generate_5_sentences.py
 │   │   └── generated_sentences.txt
 │   │
 │   ├── 04_dailydialog_chatbot/           # [Phase 2 Modern Casual Adaptation]
-│   │   ├── DailyDialog_Casual_Chatbot.ipynb
+│   │   ├── NgramLM_DailyDialogue_2472040_2472041_2472053_2472901.ipynb
 │   │   ├── generate_5_sentences.py
 │   │   └── generated_sentences.txt
 │   │
 │   └── 05_smart_hybrid_chatbot/          # [Phase 3 Retrieval-Augmented N-Gram]
-│       ├── Smart_Hybrid_Chatbot.ipynb
+│       ├── NgramLM_Hybrid_2472040_2472041_2472053_2472901.ipynb
 │       ├── generate_5_sentences.py
 │       └── generated_sentences.txt
 │
@@ -135,7 +135,7 @@ python deliverables/generate_all_model_sentences.py
 
 Individual model generation scripts:
 ```powershell
-python deliverables/01_core_ngram_models/generate_5_sentences.py
+python "deliverables/01_core_ngram_models(unused)/generate_5_sentences.py"
 python deliverables/02_keyword_seeded_chatbot/generate_5_sentences.py
 python deliverables/03_intelligent_austen_chatbot/generate_5_sentences.py
 python deliverables/04_dailydialog_chatbot/generate_5_sentences.py

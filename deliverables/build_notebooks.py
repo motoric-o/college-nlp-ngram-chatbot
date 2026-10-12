@@ -2,11 +2,11 @@
 
 Generates valid .ipynb (nbformat v4) files with rich markdown documentation,
 code implementations, and pre-computed outputs for:
-  1. 01_core_ngram_models/Core_Ngram_Language_Models.ipynb
-  2. 02_keyword_seeded_chatbot/Keyword_Seeded_Chatbot.ipynb
-  3. 03_intelligent_austen_chatbot/Intelligent_Austen_Chatbot.ipynb
-  4. 04_dailydialog_chatbot/DailyDialog_Casual_Chatbot.ipynb
-  5. 05_smart_hybrid_chatbot/Smart_Hybrid_Chatbot.ipynb
+  1. 01_core_ngram_models(unused)/NgramLM_2472040_2472041_2472053_2472901.ipynb
+  2. 02_keyword_seeded_chatbot/NgramLM_Chatbot_KeywordSeeded_2472040_2472041_2472053_2472901.ipynb
+  3. 03_intelligent_austen_chatbot/NgramLM_Intelligent_2472040_2472041_2472053_2472901.ipynb
+  4. 04_dailydialog_chatbot/NgramLM_DailyDialogue_2472040_2472041_2472053_2472901.ipynb
+  5. 05_smart_hybrid_chatbot/NgramLM_Hybrid_2472040_2472041_2472053_2472901.ipynb
 """
 
 import json
@@ -793,11 +793,11 @@ def main():
     print("[*] Generating all 5 Jupyter Notebooks in deliverables/...")
 
     notebooks = [
-        ("01_core_ngram_models/Core_Ngram_Language_Models.ipynb", build_core_ngram_notebook()),
-        ("02_keyword_seeded_chatbot/Keyword_Seeded_Chatbot.ipynb", build_keyword_chatbot_notebook()),
-        ("03_intelligent_austen_chatbot/Intelligent_Austen_Chatbot.ipynb", build_intelligent_chatbot_notebook()),
-        ("04_dailydialog_chatbot/DailyDialog_Casual_Chatbot.ipynb", build_dailydialog_chatbot_notebook()),
-        ("05_smart_hybrid_chatbot/Smart_Hybrid_Chatbot.ipynb", build_smart_hybrid_chatbot_notebook()),
+        ("01_core_ngram_models(unused)/NgramLM_2472040_2472041_2472053_2472901.ipynb", build_core_ngram_notebook()),
+        ("02_keyword_seeded_chatbot/NgramLM_Chatbot_KeywordSeeded_2472040_2472041_2472053_2472901.ipynb", build_keyword_chatbot_notebook()),
+        ("03_intelligent_austen_chatbot/NgramLM_Intelligent_2472040_2472041_2472053_2472901.ipynb", build_intelligent_chatbot_notebook()),
+        ("04_dailydialog_chatbot/NgramLM_DailyDialogue_2472040_2472041_2472053_2472901.ipynb", build_dailydialog_chatbot_notebook()),
+        ("05_smart_hybrid_chatbot/NgramLM_Hybrid_2472040_2472041_2472053_2472901.ipynb", build_smart_hybrid_chatbot_notebook()),
     ]
 
     for rel_path, nb_dict in notebooks:
